@@ -1,4 +1,5 @@
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -12,7 +13,7 @@ public class Distributeur implements ServiceDistributeur {
     // methode pour enregistrer un nouveau noeud de calcul
     public synchronized void enregistrerNoeud(ServiceNoeud node) throws RemoteException {
         nodes.add(node);
-        System.out.println("Registered new node. Total: " + nodes.size());
+        System.out.println("Nouveau noeud enregistre. Total: " + nodes.size());
     }
 
     @Override
@@ -21,6 +22,39 @@ public class Distributeur implements ServiceDistributeur {
             throw new RemoteException("Aucun noeud de calcul disponible.");
         }
 
-        return null; //to do
+        int attempts = nodes.size();
+        List<ServiceNoeud> nodesToRemove = new ArrayList<>();
+
+        // chercher un noeud libre
+        while (attempts > 0) {
+            ServiceNoeud node = nodes.get(currentNodeIndex);
+            try {
+                if (node.estLibre()) {
+                    currentNodeIndex = (currentNodeIndex + 1) % nodes.size();
+                    return node;
+                } else {
+                    System.out.println("Noeud a l'index " + currentNodeIndex + " occupe, essayer le suivant.");
+                    currentNodeIndex = (currentNodeIndex + 1) % nodes.size();
+                    attempts--;
+                }
+            } catch (RemoteException e) {
+                // noeud inaccessible, le marquer pour suppression
+                nodesToRemove.add(node);
+                System.out.println("Noeud inaccessible, marque pour suppression.");
+                currentNodeIndex = (currentNodeIndex + 1) % nodes.size();
+                attempts--;
+            }
+        }
+
+        // delete les noeuds inaccessibles
+        nodes.removeAll(nodesToRemove);
+        if (nodes.isEmpty()) {
+            throw new RemoteException("Aucun noeud disponible apres suppression des noeuds inaccessibles.");
+        }
+
+        // return le prochain noeud apres avoir epuise les attempts
+        ServiceNoeud node = nodes.get(currentNodeIndex);
+        currentNodeIndex = (currentNodeIndex + 1) % nodes.size();
+        return node;
     }
 }
