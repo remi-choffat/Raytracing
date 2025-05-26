@@ -1,3 +1,5 @@
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
@@ -10,7 +12,7 @@ public class ClientRaytracer {
 
     public static void main(String[] args) throws Exception {
 
-        String host = "localhost";
+        String host;
         int port = 1099;
 
         String fichier_description = "simple.txt"; // fichier de description de la scène par défaut
@@ -28,12 +30,22 @@ public class ClientRaytracer {
             if (args.length > 6) ny = Integer.parseInt(args[6]);
         } else {
             System.err.println("Usage: java ClientRaytracer [host] [port] [fichier_description] [largeur] [hauteur] [division_x] [division_y]");
+            // Exemple : java ClientRaytracer localhost 1099 simple.txt 512 512 2 2
             return;
         }
 
         // Récupère le service de distribution de nœuds de calcul
-        Registry registry = LocateRegistry.getRegistry(host, port);
-        ServiceDistributeur distributeur = (ServiceDistributeur) registry.lookup("DistributeurRaytracer");
+        ServiceDistributeur distributeur;
+        try {
+            Registry registry = LocateRegistry.getRegistry(host, port);
+            distributeur = (ServiceDistributeur) registry.lookup("DistributeurRaytracer");
+        } catch (RemoteException re) {
+            System.err.println("Impossible de communiquer avec le service distant (" + host + ":" + port + ")");
+            return;
+        } catch (NotBoundException nbe) {
+            System.err.println("Impossible d'accéder au registre RMI sur " + host + ":" + port);
+            return;
+        }
 
         // Crée une fenêtre pour afficher l'image
         Disp disp = new Disp("Raytracer", largeur, hauteur);
@@ -52,15 +64,21 @@ public class ClientRaytracer {
                 int ww = (ix == nx - 1) ? largeur - x : w;
                 int hh = (iy == ny - 1) ? hauteur - y : h;
 
-                // Demande à un nœud de calcul de produire l'image pour cette sous-image
-                ServiceNoeud noeud = distributeur.donneMachine();
-                Scene scene = new Scene(fichier_description, largeur, hauteur);
-                Image img = noeud.calculer(scene, x, y, ww, hh);
+                try {
+                    // Demande à un nœud de calcul de produire l'image pour cette sous-image
+                    distributeur.donneMachine();
+                    ServiceNoeud noeud = distributeur.donneMachine();
+                    Scene scene = new Scene(fichier_description, largeur, hauteur);
+                    Image img = noeud.calculer(scene, x, y, ww, hh);
 
-                // Affiche l'image dans la fenêtre
-                disp.setImage(img, x, y);
+                    // Affiche l'image dans la fenêtre
+                    disp.setImage(img, x, y);
+                } catch (RemoteException e) {
+                    System.err.println("Erreur lors de la demande de machine pour le calcul : " + e.getMessage());
+                }
             }
         }
+
     }
 
 }
