@@ -1,9 +1,11 @@
+package src;
+
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-import raytracer.*;
+import src.raytracer.*;
 
 /**
  * Client qui utilise le service de distribution pour calculer une image.
