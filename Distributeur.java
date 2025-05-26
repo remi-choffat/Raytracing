@@ -1,6 +1,9 @@
 import java.rmi.RemoteException;
 import java.util.List;
 
+/**
+ * Service qui permet d'enregistrer des nœuds et de fournir un nœud pour un calcul.
+ */
 public class Distributeur implements ServiceDistributeur {
 
     private List<ServiceNoeud> nodes; // list des noeuds enregistres
