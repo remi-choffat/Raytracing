@@ -1,4 +1,4 @@
-package src.raytracer;
+package raytracer;
 
 /**
  * Classe qui représente un rayon.

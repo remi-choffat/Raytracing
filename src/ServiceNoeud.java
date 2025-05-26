@@ -1,6 +1,6 @@
-package src;
+import raytracer.Image;
+import raytracer.Scene;
 
-import src.raytracer.*;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 

@@ -1,4 +1,4 @@
-package src.raytracer;
+package raytracer;
 
 import java.awt.Color;
 

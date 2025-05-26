@@ -1,7 +1,6 @@
-package src;
-
 import java.rmi.RemoteException;
-import src.raytracer.*;
+import raytracer.Scene;
+import raytracer.Image;
 
 /**
  * Noeud
