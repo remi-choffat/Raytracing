@@ -10,12 +10,12 @@ import raytracer.*;
  */
 public class ClientRaytracer {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
 
         String host;
         int port = 1099;
 
-        String fichier_description = "simple.txt"; // fichier de description de la scène par défaut
+        String fichier_description = "scenes/simple.txt"; // fichier de description de la scène par défaut
         int largeur = 512, hauteur = 512; // dimensions par défaut de l'image
         int nx = 2, ny = 2; // divisions par défaut : 2x2
 
@@ -30,7 +30,7 @@ public class ClientRaytracer {
             if (args.length > 6) ny = Integer.parseInt(args[6]);
         } else {
             System.err.println("Usage: java ClientRaytracer [host] [port] [fichier_description] [largeur] [hauteur] [division_x] [division_y]");
-            // Exemple : java ClientRaytracer localhost 1099 simple.txt 512 512 2 2
+            // Exemple : java ClientRaytracer localhost 1099 scenes/simple.txt 512 512 2 2
             return;
         }
 

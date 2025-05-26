@@ -3,3 +3,9 @@
 *.iml
 *.pdf
 *.class
+*.log
+*.jar
+*.war
+.vscode/
+*.swp
+*.xlsx
