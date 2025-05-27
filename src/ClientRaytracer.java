@@ -64,13 +64,15 @@ public class ClientRaytracer {
         int w = largeur / nx;
         int h = hauteur / ny;
 
+        Scene scene = new Scene(fichier_description, largeur, hauteur);
+
         Thread[][] threads = new Thread[nx][ny];
         AtomicInteger compteur = new AtomicInteger(0);
         int total = nx * ny;
 
         // Pour chaque sous-image, on demande à un nœud de calcul de calculer l'image
-        for (int ix = 0; ix < nx; ix++) {
-            for (int iy = 0; iy < ny; iy++) {
+        for (int iy = 0; iy < ny; iy++) {
+            for (int ix = 0; ix < nx; ix++) {
                 final int x = ix * w;
                 final int y = iy * h;
                 final int ww = (ix == nx - 1) ? largeur - x : w;
@@ -79,7 +81,7 @@ public class ClientRaytracer {
                 threads[ix][iy] = new Thread(() -> {
                     try {
                         ServiceNoeud noeud = distributeur.donneMachine();
-                        Scene scene = new Scene(fichier_description, largeur, hauteur);
+
                         Image img = noeud.calculer(scene, x, y, ww, hh);
                         synchronized (disp) {
                             disp.setImage(img, x, y);
