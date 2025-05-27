@@ -1,0 +1,19 @@
+@startuml
+participant Client as c
+participant Distributeur as d
+participant Noeud_n as n
+
+n -> d : enregistrerNoeud(ServiceNoeud)
+c -> c : disp = new Disp(titre, largeur, hauteur)
+c -> c : scene = new Scene(fichier_desc, largeur, hauteur)
+loop nombre de lignes y
+	loop nombre de colonnes x
+		c -> c : new Thread()
+		c -> d : donnerMachine()
+		d --> c : ServiceNoeud noeud
+		c -> n : calculer(scene, x, y)
+		n --> c : Image img
+		c -> c : disp.setImage(img, x, y)
+	end
+end
+@enduml
