@@ -2,13 +2,16 @@ import java.rmi.RemoteException;
 import java.rmi.NotBoundException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
+import java.io.Serializable;
 import raytracer.Scene;
 import raytracer.Image;
+import java.rmi.server.UnicastRemoteObject;
+
 
 /**
  * Noeud
  */
-public class Noeud implements ServiceNoeud {
+public class Noeud implements ServiceNoeud, Serializable {
 
 	private boolean libre = true;
 
@@ -29,15 +32,15 @@ public class Noeud implements ServiceNoeud {
 
 
 	public static void main(String[] args) {
-		if (args.length < 2) {
-			System.err.println("Missing parameter, Usage -> java Noeud [Distibuteur IP] [Distibuteur Port]");
+		if (args.length < 4) {
+			System.err.println("Missing parameter, Usage -> java Noeud [Local Registry] [Local Port] [Distibuteur IP] [Distibuteur Port]");
 			return;
 		} 
 		Registry reg;
 		try {
-			reg = LocateRegistry.getRegistry(args[0], Integer.parseInt(args[1]));
+			reg = LocateRegistry.getRegistry(args[2], Integer.parseInt(args[3]));
 		} catch (Exception e) {
-			System.err.println("Erreur, registry pas trouve a l'adresse' " + args[0] + ":" + args[1]);
+			System.err.println("Erreur, registry du distributeur pas trouve a l'adresse' " + args[2] + ":" + args[3]);
 			e.printStackTrace();
 			return;
 		}
@@ -55,7 +58,28 @@ public class Noeud implements ServiceNoeud {
 			return;
 		}
 		
+
+		Registry loc;
+		try {
+			loc = LocateRegistry.getRegistry(args[0], Integer.parseInt(args[1]));
+		} catch (Exception e) {
+			System.err.println("Erreur, registry local pas trouve a l'adresse' " + args[0] + ":" + args[1]);
+			e.printStackTrace();
+			return;
+		}
+
+		
 		ServiceNoeud sn = new Noeud();
+
+		try {
+			loc.bind("NoeudCalcul", (ServiceNoeud)UnicastRemoteObject.exportObject(sn, 0));
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
+
+
+
 
 		try {
 			sd.enregistrerNoeud(sn);
