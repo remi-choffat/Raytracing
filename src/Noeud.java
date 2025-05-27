@@ -17,16 +17,18 @@ public class Noeud implements ServiceNoeud, Serializable {
 
     private boolean libre = true;
 
-    public synchronized Image calculer(Scene scene, int x, int y, int w, int h) throws RemoteException {
-        if (this.libre) {
-            this.libre = false;
-            Image r = scene.compute(x, y, w, h);
-            this.libre = true;
-            return r;
-        } else {
-            throw new RemoteException("MACHINE OCCUPEE");
-        }
-    }
+	public synchronized Image calculer(Scene scene, int x, int y, int w, int h) throws RemoteException {
+		if (this.libre) {
+			this.libre = false;
+			System.out.format(">> Calcul de dimension (w=%d, h=%d) en (x=%d, y=%d)\n", w, h, x, h);
+			Image r = scene.compute(x, y, w, h);
+			System.out.format("<< Calcul terminé\n");
+			this.libre = true;
+			return r;
+		} else {
+			throw new RemoteException("MACHINE OCCUPEE");
+		}
+	}
 
     public boolean estLibre() throws RemoteException {
         return this.libre;
@@ -81,17 +83,20 @@ public class Noeud implements ServiceNoeud, Serializable {
         }
 
 
-        try {
-            sd.enregistrerNoeud(sn);
-        } catch (RemoteException e) {
-            System.err.println("Erreur a l'enregistrement du noeud dans le distributeur'");
-            e.printStackTrace();
-            return;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
-    }
+
+
+		try {
+			sd.enregistrerNoeud(sn);
+			System.out.println("Noeud Opérationnel");
+		} catch (RemoteException e) {
+			System.err.println("Erreur a l'enregistrement du noeud dans le distributeur'");
+			e.printStackTrace();
+			return;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
+	}
 
 
 }
