@@ -7,8 +7,13 @@ import java.util.List;
  */
 public class Distributeur implements ServiceDistributeur {
 
-    private List<ServiceNoeud> nodes; // list des noeuds enregistres
+    private final List<ServiceNoeud> nodes; // list des noeuds enregistres
     private int currentNodeIndex; // index du noeud courant
+
+    public Distributeur() {
+        this.nodes = new ArrayList<>();
+        this.currentNodeIndex = 0; // commence avec le premier noeud
+    }
 
     // methode pour enregistrer un nouveau noeud de calcul
     public synchronized void enregistrerNoeud(ServiceNoeud node) throws RemoteException {
