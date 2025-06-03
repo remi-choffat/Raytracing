@@ -5,10 +5,8 @@ import java.rmi.registry.Registry;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jdk.jfr.internal.util.StopWatch;
 import raytracer.*;
 
-import static java.lang.Thread.sleep;
 
 /**
  * Client qui utilise le service de distribution pour calculer une image.
@@ -72,8 +70,8 @@ public class ClientRaytracer {
 
         Thread[][] threads = new Thread[nx][ny];
 
-		final int MAXTHREADS = 100;
-		Semaphore thread_disponible = new Semaphore(MAXTHREADS);
+        final int MAXTHREADS = 100;
+        Semaphore thread_disponible = new Semaphore(MAXTHREADS);
 
         AtomicInteger compteur = new AtomicInteger(0);
         int total = nx * ny;
@@ -86,65 +84,53 @@ public class ClientRaytracer {
                 final int ww = (ix == nx - 1) ? largeur - x : w;
                 final int hh = (iy == ny - 1) ? hauteur - y : h;
 
-
-
-
                 threads[ix][iy] = new Thread() {
-					@Override
-					public void run() {
-						boolean calculTermine = false;
-						ServiceNoeud noeud = null;
-						while (!calculTermine) {
-							try {
-								noeud = distributeur.donneMachine();
-							} catch (NoeudIndisponibleException nie) {
-								// Si un calcul échoue, on attend un peu et on réessaie
-								//                            try {
-								//                                sleep(1L); // Attendre avant de réessayer
-								continue;
-								//                            } catch (InterruptedException ex) {
-								//                                throw new RuntimeException(ex);
-								//                            }
-							} catch (RemoteException e) {
-								//                            System.err.println("Une erreur est survenue lors de la récupération d'un noeud de calcul : " + e.getMessage());
-								continue;
-							}
-							try {
-								Image img = noeud.calculer(scene, x, y, ww, hh);
-								synchronized (disp) {
-									disp.setImage(img, x, y);
-								}
-								int done = compteur.incrementAndGet();
-								calculTermine = true;
+                    @Override
+                    public void run() {
+                        boolean calculTermine = false;
+                        ServiceNoeud noeud = null;
+                        while (!calculTermine) {
+                            try {
+                                noeud = distributeur.donneMachine();
+                            } catch (NoeudIndisponibleException nie) {
+                                // Si un calcul échoue, on attend un peu et on réessaie
+                                // try {
+                                //     sleep(10L); // Attendre avant de réessayer
+                                continue;
+                                // } catch (InterruptedException ex) {
+                                //     throw new RuntimeException(ex);
+                                // }
+                            } catch (RemoteException e) {
+                                continue;
+                            }
+                            try {
+                                Image img = noeud.calculer(scene, x, y, ww, hh);
+                                synchronized (disp) {
+                                    disp.setImage(img, x, y);
+                                }
+                                int done = compteur.incrementAndGet();
+                                calculTermine = true;
 
-								thread_disponible.release();
-								int percent = (int) ((done * 100.0) / total);
-								System.out.print("\rCalcul de l'image en cours (" + percent + " %)...");
-							} catch (RemoteException e) {
-								System.err.println("Une erreur est survenue lors du calcul d'une sous-image : " + e.getMessage());
-							}
-						}
+                                thread_disponible.release();
+                                int percent = (int) ((done * 100.0) / total);
+                                System.out.print("\rCalcul de l'image en cours (" + percent + " %)...");
+                            } catch (RemoteException e) {
+                                System.err.println("Une erreur est survenue lors du calcul d'une sous-image : " + e.getMessage());
+                            }
+                        }
 
-					}
+                    }
                 };
-				try {
-					thread_disponible.acquire();
-				} catch (Exception e) {
-					// TODO: handle exception
-				}
+                try {
+                    thread_disponible.acquire();
+                } catch (Exception ignored) {
+                }
                 threads[ix][iy].start();
 
             }
         }
 
-
         // Attend la fin de tous les threads
-
-
-
-		
-
-
         for (int ix = 0; ix < nx; ix++) {
             for (int iy = 0; iy < ny; iy++) {
                 try {
@@ -155,7 +141,7 @@ public class ClientRaytracer {
             }
         }
 
-        // Affiche le message de succès uniquement si toute l'image est calculée
+        // Affiche le message de succès si toute l'image est calculée, sinon indique la fin du calcul
         if (compteur.get() == total) {
             System.out.println("\nImage calculée et affichée avec succès !");
         } else {

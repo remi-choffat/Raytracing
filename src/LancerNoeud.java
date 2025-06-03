@@ -4,9 +4,13 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
+/**
+ * Lance un nœud de calcul qui s'enregistre auprès d'un distributeur.
+ */
 public class LancerNoeud {
 
     public static void main(String[] args) {
+
         if (args.length < 4) {
             System.err.println("Missing parameter, Usage -> java LancerNoeud [Local Registry] [Local Port] [Distibuteur IP] [Distibuteur Port]");
             return;
@@ -30,7 +34,6 @@ public class LancerNoeud {
             return;
         }
 
-
         Registry loc;
         try {
             loc = LocateRegistry.getRegistry(args[0], Integer.parseInt(args[1]));
@@ -39,7 +42,7 @@ public class LancerNoeud {
             return;
         }
 
-
+        // Crée un nœud de calcul
         ServiceNoeud sn = new Noeud(sd);
 
         try {
@@ -49,7 +52,7 @@ public class LancerNoeud {
             return;
         }
 
-
+        // Enregistre le nœud auprès du distributeur
         try {
             sd.enregistrerNoeud(sn);
             System.out.println("Noeud Opérationnel");

@@ -21,12 +21,25 @@ public class Distributeur implements ServiceDistributeur {
         this.noeuds = new HashMap<>();
     }
 
-    // methode pour enregistrer un nouveau noeud de calcul
+
+    /**
+     * Enregistre un nouveau nœud de calcul dans le distributeur.
+     *
+     * @param node Le nœud à enregistrer.
+     */
     public synchronized void enregistrerNoeud(ServiceNoeud node) throws RemoteException {
         noeuds.put(node, Map.entry(EtatNoeud.LIBRE, System.currentTimeMillis()));
         System.out.println("Nouveau noeud enregistré. Total : " + noeuds.size());
     }
 
+
+    /**
+     * Fournit un nœud de calcul libre pour effectuer un calcul.
+     *
+     * @return Un nœud de calcul libre.
+     * @throws RemoteException            Si une erreur de communication RMI se produit.
+     * @throws NoeudIndisponibleException Si aucun nœud de calcul n'est disponible.
+     */
     @Override
     public synchronized ServiceNoeud donneMachine() throws RemoteException, NoeudIndisponibleException {
 
@@ -34,17 +47,16 @@ public class Distributeur implements ServiceDistributeur {
             throw new NoeudIndisponibleException("Aucun noeud de calcul enregistré.");
         }
 
-        // chercher un noeud libre
+        // Cherche un noeud libre
         for (ServiceNoeud node : noeuds.keySet()) {
             if (noeuds.get(node).getKey() == EtatNoeud.LIBRE) {
                 if (System.currentTimeMillis() - noeuds.get(node).getValue() > timeout) {
                     try {
-                        System.out.println("Appel JE SUIS LA");
-                        node.jeSuisLa(); // vérifier si le noeud est toujours actif
+                        node.jeSuisLa(); // vérifie si le noeud est toujours actif
                     } catch (RemoteException e) {
                         System.out.println("Un noeud inactif a été retiré de la liste.");
                         noeuds.remove(node);
-                        continue; // passer au noeud suivant
+                        continue; // passe au noeud suivant
                     }
                 }
                 noeuds.put(node, Map.entry(EtatNoeud.OCCUPE, System.currentTimeMillis()));
@@ -55,6 +67,13 @@ public class Distributeur implements ServiceDistributeur {
         throw new NoeudIndisponibleException("Aucun noeud disponible actuellement.");
     }
 
+
+    /**
+     * Avertit le distributeur qu'un nœud de calcul est en train d'effectuer un calcul.
+     *
+     * @param n le nœud de calcul qui effectue le calcul
+     * @throws RemoteException Si une erreur de communication RMI se produit.
+     */
     @Override
     public void noeudAvertirCalcul(ServiceNoeud n) throws RemoteException {
         if (noeuds.containsKey(n)) {
@@ -64,6 +83,13 @@ public class Distributeur implements ServiceDistributeur {
         }
     }
 
+
+    /**
+     * Avertit le distributeur qu'un nœud de calcul est maintenant libre.
+     *
+     * @param n le nœud de calcul qui est maintenant libre
+     * @throws RemoteException Si une erreur de communication RMI se produit.
+     */
     @Override
     public void noeudAvertirLibre(ServiceNoeud n) throws RemoteException {
         if (noeuds.containsKey(n)) {
