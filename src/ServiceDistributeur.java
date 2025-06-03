@@ -21,5 +21,21 @@ public interface ServiceDistributeur extends Remote {
      * @return un objet ServiceNoeud représentant le nœud de calcul
      * @throws RemoteException si une erreur de communication RMI se produit
      */
-    ServiceNoeud donneMachine() throws RemoteException;
+    ServiceNoeud donneMachine() throws RemoteException, NoeudIndisponibleException;
+
+    /**
+     * Avertit le distributeur qu'un nœud de calcul est en train de faire un calcul.
+     *
+     * @param n le nœud de calcul qui effectue le calcul
+     * @throws RemoteException si une erreur de communication RMI se produit
+     */
+    void noeudAvertirCalcul(ServiceNoeud n) throws RemoteException;
+
+    /**
+     * Avertit le distributeur qu'un nœud de calcul est libre après avoir terminé un calcul.
+     *
+     * @param n le nœud de calcul qui est maintenant libre
+     * @throws RemoteException si une erreur de communication RMI se produit
+     */
+    void noeudAvertirLibre(ServiceNoeud n) throws RemoteException;
 }

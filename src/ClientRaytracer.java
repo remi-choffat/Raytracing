@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import raytracer.*;
 
+import static java.lang.Thread.sleep;
+
 /**
  * Client qui utilise le service de distribution pour calculer une image.
  */
@@ -79,18 +81,35 @@ public class ClientRaytracer {
                 final int hh = (iy == ny - 1) ? hauteur - y : h;
 
                 threads[ix][iy] = new Thread(() -> {
-                    try {
-                        ServiceNoeud noeud = distributeur.donneMachine();
-
-                        Image img = noeud.calculer(scene, x, y, ww, hh);
-                        synchronized (disp) {
-                            disp.setImage(img, x, y);
+                    boolean calculTermine = false;
+                    ServiceNoeud noeud = null;
+                    while (!calculTermine) {
+                        try {
+                            noeud = distributeur.donneMachine();
+                        } catch (NoeudIndisponibleException nie) {
+                            // Si un calcul échoue, on attend un peu et on réessaie
+//                            try {
+//                                sleep(1L); // Attendre avant de réessayer
+                                continue;
+//                            } catch (InterruptedException ex) {
+//                                throw new RuntimeException(ex);
+//                            }
+                        } catch (RemoteException e) {
+//                            System.err.println("Une erreur est survenue lors de la récupération d'un noeud de calcul : " + e.getMessage());
+                            continue;
                         }
-                        int done = compteur.incrementAndGet();
-                        int percent = (int) ((done * 100.0) / total);
-                        System.out.print("\rCalcul de l'image en cours (" + percent + " %)...");
-                    } catch (RemoteException e) {
-                        System.err.println("Erreur lors du calcul d'une sous-image : " + e.getMessage());
+                        try {
+                            Image img = noeud.calculer(scene, x, y, ww, hh);
+                            synchronized (disp) {
+                                disp.setImage(img, x, y);
+                            }
+                            int done = compteur.incrementAndGet();
+                            calculTermine = true;
+                            int percent = (int) ((done * 100.0) / total);
+                            System.out.print("\rCalcul de l'image en cours (" + percent + " %)...");
+                        } catch (RemoteException e) {
+                            System.err.println("Une erreur est survenue lors du calcul d'une sous-image : " + e.getMessage());
+                        }
                     }
                 });
                 threads[ix][iy].start();

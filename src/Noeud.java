@@ -15,88 +15,26 @@ import java.rmi.server.UnicastRemoteObject;
  */
 public class Noeud implements ServiceNoeud, Serializable {
 
-    private boolean libre = true;
+    private final ServiceDistributeur distributeur;
 
-	public synchronized Image calculer(Scene scene, int x, int y, int w, int h) throws RemoteException {
-		if (this.libre) {
-			this.libre = false;
-			System.out.format(">> Calcul de dimension (w=%d, h=%d) en (x=%d, y=%d)\n", w, h, x, h);
-			Image r = scene.compute(x, y, w, h);
-			System.out.format("<< Calcul terminé\n");
-			this.libre = true;
-			return r;
-		} else {
-			throw new RemoteException("MACHINE OCCUPEE");
-		}
-	}
-
-    public boolean estLibre() throws RemoteException {
-        return this.libre;
+    public Noeud(ServiceDistributeur distributeur) {
+        this.distributeur = distributeur;
     }
 
+    public synchronized Image calculer(Scene scene, int x, int y, int w, int h) throws RemoteException {
+        // Avertir le distributeur que ce noeud est en train de faire un calcul
+        distributeur.noeudAvertirCalcul(this);
+        // Calcul de l'image
+        System.out.format(">> Calcul de dimension (w=%d, h=%d) en (x=%d, y=%d)\n", w, h, x, h);
+        Image r = scene.compute(x, y, w, h);
+        System.out.format("<< Calcul terminé\n");
+        // Avertir le distributeur que ce noeud est libre
+        distributeur.noeudAvertirLibre(this);
+        // Retourner l'image calculée
+        return r;
+    }
 
-    public static void main(String[] args) {
-        if (args.length < 4) {
-            System.err.println("Missing parameter, Usage -> java Noeud [Local Registry] [Local Port] [Distibuteur IP] [Distibuteur Port]");
-            return;
-        }
-        Registry reg;
-        try {
-            reg = LocateRegistry.getRegistry(args[2], Integer.parseInt(args[3]));
-        } catch (Exception e) {
-            System.err.println("Erreur, registry du distributeur pas trouve a l'adresse' " + args[2] + ":" + args[3]);
-            e.printStackTrace();
-            return;
-        }
-
-        ServiceDistributeur sd;
-
-        try {
-            sd = (ServiceDistributeur) reg.lookup("DistributeurRaytracer");
-        } catch (NotBoundException e) {
-            System.err.println("Erreur, ServiceDistributeur pas trouve dans le registry");
-            e.printStackTrace();
-            return;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
-
-
-        Registry loc;
-        try {
-            loc = LocateRegistry.getRegistry(args[0], Integer.parseInt(args[1]));
-        } catch (Exception e) {
-            System.err.println("Erreur, registry local pas trouve a l'adresse' " + args[0] + ":" + args[1]);
-            e.printStackTrace();
-            return;
-        }
-
-
-        ServiceNoeud sn = new Noeud();
-
-        try {
-            loc.rebind("NoeudCalcul", (ServiceNoeud) UnicastRemoteObject.exportObject(sn, 0));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
-
-
-
-
-		try {
-			sd.enregistrerNoeud(sn);
-			System.out.println("Noeud Opérationnel");
-		} catch (RemoteException e) {
-			System.err.println("Erreur a l'enregistrement du noeud dans le distributeur'");
-			e.printStackTrace();
-			return;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return;
-		}
-	}
-
+    public void jeSuisLa() throws RemoteException {
+    }
 
 }

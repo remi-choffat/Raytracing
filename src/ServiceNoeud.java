@@ -11,5 +11,5 @@ import java.rmi.RemoteException;
 public interface ServiceNoeud extends Remote {
     Image calculer(Scene scene, int x, int y, int w, int h) throws RemoteException;
 
-    boolean estLibre() throws RemoteException;
+    void jeSuisLa() throws RemoteException;
 }

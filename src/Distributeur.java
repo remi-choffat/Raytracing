@@ -1,52 +1,75 @@
 import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Service qui permet d'enregistrer des nœuds et de fournir un nœud pour un calcul.
  */
 public class Distributeur implements ServiceDistributeur {
 
-    private final List<ServiceNoeud> nodes; // list des noeuds enregistres
+    /**
+     * Liste des noeuds enregistrés avec leur état et le timestamp de la dernière activité.
+     */
+    private final Map<ServiceNoeud, Map.Entry<EtatNoeud, Long>> noeuds; // list des noeuds enregistres
+
+    /**
+     * Délai d'attente avant de demander une nouvelle confirmation d'état d'un nœud.
+     */
+    private static final long timeout = 30000;
 
     public Distributeur() {
-        this.nodes = new ArrayList<>();
+        this.noeuds = new HashMap<>();
     }
 
     // methode pour enregistrer un nouveau noeud de calcul
     public synchronized void enregistrerNoeud(ServiceNoeud node) throws RemoteException {
-        nodes.add(node);
-        System.out.println("Nouveau noeud enregistre. Total : " + nodes.size());
+        noeuds.put(node, Map.entry(EtatNoeud.LIBRE, System.currentTimeMillis()));
+        System.out.println("Nouveau noeud enregistré. Total : " + noeuds.size());
     }
 
     @Override
-    public synchronized ServiceNoeud donneMachine() throws RemoteException {
+    public synchronized ServiceNoeud donneMachine() throws RemoteException, NoeudIndisponibleException {
 
-        if (nodes.isEmpty()) {
-            throw new RemoteException("Aucun noeud de calcul enregistré.");
+        if (noeuds.isEmpty()) {
+            throw new NoeudIndisponibleException("Aucun noeud de calcul enregistré.");
         }
 
-        List<ServiceNoeud> nodesToRemove = new ArrayList<>();
-
         // chercher un noeud libre
-        for (ServiceNoeud node : nodes) {
-            try {
-                if (node.estLibre()) {
-                    return node;
+        for (ServiceNoeud node : noeuds.keySet()) {
+            if (noeuds.get(node).getKey() == EtatNoeud.LIBRE) {
+                if (System.currentTimeMillis() - noeuds.get(node).getValue() > timeout) {
+                    try {
+                        System.out.println("Appel JE SUIS LA");
+                        node.jeSuisLa(); // vérifier si le noeud est toujours actif
+                    } catch (RemoteException e) {
+                        System.out.println("Un noeud inactif a été retiré de la liste.");
+                        noeuds.remove(node);
+                        continue; // passer au noeud suivant
+                    }
                 }
-            } catch (RemoteException e) {
-                // noeud inaccessible, le marquer pour suppression
-                nodesToRemove.add(node);
-                System.out.println("Noeud inaccessible, marque pour suppression.");
+                noeuds.put(node, Map.entry(EtatNoeud.OCCUPE, System.currentTimeMillis()));
+                return node;
             }
         }
 
-        // delete les noeuds inaccessibles
-        nodes.removeAll(nodesToRemove);
-        if (nodes.isEmpty()) {
-            throw new RemoteException("Aucun noeud disponible.");
-        }
+        throw new NoeudIndisponibleException("Aucun noeud disponible actuellement.");
+    }
 
-        return donneMachine();
+    @Override
+    public void noeudAvertirCalcul(ServiceNoeud n) throws RemoteException {
+        if (noeuds.containsKey(n)) {
+            noeuds.put(n, Map.entry(EtatNoeud.OCCUPE, System.currentTimeMillis()));
+        } else {
+            throw new RemoteException("Noeud non enregistré.");
+        }
+    }
+
+    @Override
+    public void noeudAvertirLibre(ServiceNoeud n) throws RemoteException {
+        if (noeuds.containsKey(n)) {
+            noeuds.put(n, Map.entry(EtatNoeud.LIBRE, System.currentTimeMillis()));
+        } else {
+            throw new RemoteException("Noeud non enregistré.");
+        }
     }
 }
